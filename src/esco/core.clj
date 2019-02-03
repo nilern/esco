@@ -1,4 +1,5 @@
 (ns esco.core
+  (:refer-clojure :exclude [comment])
   (:import [clojure.lang Var]
            [javax.xml.stream XMLEventReader XMLStreamException]
            [javax.xml.stream.events XMLEvent]))
@@ -80,21 +81,35 @@
 (deftype SatParser [pred]
   EksMLParser
   (probe [_ event] (if (pred event) :consuming :fail))
-  (parse [_ xml] (let [event (.nextEvent ^XMLEventReader xml)]
-                   (if (pred event)
-                     event
-                     (throw (if event
-                              (XMLStreamException. (str "Unsatisfied: \"" event \")
-                                                   (.getLocation event))
-                              (XMLStreamException. (str "Unsatisfied: \"" event \"))))))))
+  (parse [_ xml]
+    (let [event (.nextEvent ^XMLEventReader xml)]
+      (if (pred event)
+        event
+        (let [msg (str "Unsatisfied: expected " pred
+                       ", got " (.getName (class event)) " \"" event \")]
+          (throw (if event
+                   (XMLStreamException. msg (.getLocation event))
+                   (XMLStreamException. msg))))))))
 
 (def sat ->SatParser)
 
-(def start-document (sat #(.isStartDocument ^XMLEvent %)))
-(def end-document (sat #(.isEndDocument ^XMLEvent %)))
+(defn start-document? [^XMLEvent event] (.isStartDocument event))
+(def start-document (sat start-document?))
+
+(defn end-document? [^XMLEvent event] (.isEndDocument event))
+(def end-document (sat end-document?))
+
+(defn start-element? [^XMLEvent event] (.isStartElement event))
 (def start-element (sat #(.isStartElement ^XMLEvent %)))
-(def end-element (sat #(.isEndElement ^XMLEvent %)))
-(def characters (sat #(.isCharacters ^XMLEvent %)))
+
+(defn end-element? [^XMLEvent event] (.isEndElement event))
+(def end-element (sat end-element?))
+
+(defn characters? [^XMLEvent event] (.isCharacters event))
+(def characters (sat characters?))
+
+(defn comment? [^XMLEvent event] (= (.getEventType event) XMLEvent/COMMENT))
+(def comment (sat comment?))
 
 (extend-protocol EksMLParser
   Var
