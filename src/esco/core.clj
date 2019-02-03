@@ -100,7 +100,7 @@
 (def end-document (sat end-document?))
 
 (defn start-element? [^XMLEvent event] (.isStartElement event))
-(def start-element (sat #(.isStartElement ^XMLEvent %)))
+(def start-element (sat start-element?))
 
 (defn end-element? [^XMLEvent event] (.isEndElement event))
 (def end-element (sat end-element?))

@@ -10,9 +10,14 @@
 
 (def misc (fmap (constantly nil) comment))
 
+(def char-data
+  (plet [^Characters cs characters]
+    (when-not (.isIgnorableWhiteSpace cs)
+      (.getData cs))))
+
 (def content
   (plet [ecs (many (orp #'element
-                        characters
+                        char-data 
                         (fmap (constantly nil) comment)))]
     (filter some? ecs)))
 
